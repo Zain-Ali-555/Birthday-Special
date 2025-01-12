@@ -198,6 +198,99 @@
           transform: scale(1);
         }
       }
+
+      /* Voice Message Section */
+      #voice-message-container {
+        display: none;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      #voice-message-container button {
+        margin-top: 10px;
+        background: #ff477e;
+        color: white;
+        padding: 15px 30px;
+        font-size: 1.1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: background 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      #voice-message-container button:hover {
+        background: #ff285c;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      #recording-indicator {
+        display: none;
+        font-size: 1.2rem;
+        color: red;
+        font-weight: bold;
+      }
+
+      #name-input,
+      #message-choice,
+      #text-message-container {
+        width: 100%;
+        text-align: center;
+      }
+
+      #name-input input {
+        width: 80%;
+        max-width: 300px;
+      }
+
+      #text-message-container {
+        width: 100%;
+        max-width: 700px;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      #text-message-container textarea {
+        resize: vertical;
+      }
+
+      @media screen and (max-width: 600px) {
+        header img {
+          width: 150px;
+          height: 150px;
+        }
+
+        header h1 {
+          font-size: 2rem;
+        }
+
+        header h2 {
+          font-size: 1.4rem;
+        }
+
+        #comment-form input,
+        #comment-form textarea,
+        #comment-form button {
+          font-size: 0.9rem;
+          padding: 12px;
+        }
+
+        #voice-message-container button {
+          padding: 12px 20px;
+          font-size: 1rem;
+        }
+
+        #text-message-container {
+          width: 100%;
+          padding: 0 20px;
+        }
+
+        #name-input input {
+          width: 100%;
+        }
+      }
     </style>
   </head>
   <body>
@@ -209,24 +302,147 @@
 
     <section id="comments-section">
       <h3>Leave a Birthday Message</h3>
-      <form id="comment-form">
-        <input type="text" id="comment-name" placeholder="Your Name" required />
-        <textarea
-          id="comment-input"
-          rows="3"
-          placeholder="Write your message here..."
-          required
-        ></textarea>
-        <button type="button" id="submit-comment">Post Message</button>
-      </form>
+      <div id="name-input">
+        <input type="text" id="user-name" placeholder="Your Name" required />
+        <button type="button" id="set-name">Set Name</button>
+      </div>
+
+      <div id="message-choice" style="display: none">
+        <button id="text-message-btn">Text Message</button>
+        <button id="voice-message-btn">Voice Message</button>
+      </div>
+
+      <div id="text-message-container" style="display: none">
+        <form id="comment-form">
+          <input
+            type="text"
+            id="comment-name"
+            placeholder="Your Name"
+            disabled
+          />
+          <textarea
+            id="comment-input"
+            rows="3"
+            placeholder="Write your message here..."
+            required
+          ></textarea>
+          <button type="button" id="submit-comment">Post Message</button>
+        </form>
+      </div>
+
+      <div id="voice-message-container">
+        <button id="start-recording">Start Recording</button>
+        <p id="recording-indicator">Recording...</p>
+        <button id="submit-voice">Post Voice Message</button>
+        <audio id="audio-preview" controls style="display: none"></audio>
+      </div>
 
       <ul id="comment-list"></ul>
     </section>
 
-    <footer>
-      Made with ❤️ by <a href="#">MalikZain555</a>
-    </footer>
+    <footer>Made with ❤️ by <a href="#">MalikZain555</a></footer>
 
+    <script>
+      let userName = "";
+      let mediaRecorder;
+      let audioChunks = [];
+      let isRecording = false;
+
+      // Handle setting user name
+      document.getElementById("set-name").addEventListener("click", () => {
+        userName = document.getElementById("user-name").value;
+        if (userName) {
+          document.getElementById("name-input").style.display = "none";
+          document.getElementById("message-choice").style.display = "block";
+        }
+      });
+
+      // Handle selecting text message
+      document
+        .getElementById("text-message-btn")
+        .addEventListener("click", () => {
+          document.getElementById("message-choice").style.display = "none";
+          document.getElementById("text-message-container").style.display =
+            "block";
+          document.getElementById("comment-name").value = userName;
+        });
+
+      // Handle selecting voice message
+      document
+        .getElementById("voice-message-btn")
+        .addEventListener("click", () => {
+          document.getElementById("message-choice").style.display = "none";
+          document.getElementById("voice-message-container").style.display =
+            "block";
+        });
+
+      // Start voice recording
+      document
+        .getElementById("start-recording")
+        .addEventListener("click", async () => {
+          if (!isRecording) {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+            });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = (event) => {
+              audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+              const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+              const audioUrl = URL.createObjectURL(audioBlob);
+              document.getElementById("audio-preview").src = audioUrl;
+              document.getElementById("audio-preview").style.display = "block";
+              document.getElementById("submit-voice").style.display =
+                "inline-block";
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            document.getElementById("recording-indicator").style.display =
+              "block";
+            document.getElementById("start-recording").innerText =
+              "Stop Recording";
+          } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            document.getElementById("recording-indicator").style.display =
+              "none";
+            document.getElementById("start-recording").innerText =
+              "Start Recording";
+          }
+        });
+
+      // Submit voice message
+      document.getElementById("submit-voice").addEventListener("click", () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const commentList = document.getElementById("comment-list");
+        const comment = document.createElement("li");
+        comment.classList.add("comment");
+        comment.innerHTML = `<h3>${userName} (Voice Message)</h3><audio controls src="${audioUrl}"></audio>`;
+        commentList.appendChild(comment);
+        audioChunks = [];
+        document.getElementById("audio-preview").style.display = "none";
+        document.getElementById("submit-voice").style.display = "none";
+      });
+
+      // Submit text message
+      document
+        .getElementById("submit-comment")
+        .addEventListener("click", () => {
+          const textMessage = document.getElementById("comment-input").value;
+          if (textMessage) {
+            const commentList = document.getElementById("comment-list");
+            const comment = document.createElement("li");
+            comment.classList.add("comment");
+            comment.innerHTML = `<h3>${userName} (Text Message)</h3><p>${textMessage}</p>`;
+            commentList.appendChild(comment);
+            document.getElementById("comment-input").value = "";
+          }
+        });
+    </script>
     <script src="./app.js"></script>
   </body>
 </html>
