@@ -139,35 +139,50 @@
 
       // Fetch comments from a backend server
       async function fetchComments() {
-    try {
-        const response = await fetch('https://birthday-special-ii4z.vercel.app/comments');
-        if (!response.ok) {
+        try {
+          const response = await fetch(
+            "https://birthday-special-ii4z.vercel.app/comments"
+          );
+          if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const comments = await response.json();
+          commentList.innerHTML = ""; // Clear existing comments
+          comments.forEach(({ name, message }) => addComment(name, message));
+        } catch (error) {
+          console.error("Error fetching comments:", error);
         }
-        const comments = await response.json();
-        commentList.innerHTML = ''; // Clear the comment list
-        comments.forEach(({ name, message }) => addComment(name, message));
-    } catch (error) {
-        console.error('Error fetching comments:', error);
-    }
-}
+      }
 
+      function addComment(name, message) {
+        const listItem = document.createElement("li");
+        listItem.className = "comment";
+        listItem.innerHTML = `
+    <h3>${name}</h3>
+    <p>${message}</p>
+  `;
+        commentList.appendChild(listItem);
+      }
 
-     // Post comment to the backend server
-async function postComment(name, message) {
-    try {
-        const response = await fetch("https://birthday-special-ii4z.vercel.app/comments", { // Update this URL
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, message }),
-        });
-        if (!response.ok) {
+      // Post comment to the backend server
+      async function postComment(name, message) {
+        try {
+          const response = await fetch(
+            "https://birthday-special-ii4z.vercel.app/comments",
+            {
+              // Update this URL
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, message }),
+            }
+          );
+          if (!response.ok) {
             throw new Error("Failed to post comment");
+          }
+        } catch (error) {
+          console.error("Error posting comment:", error);
         }
-    } catch (error) {
-        console.error("Error posting comment:", error);
-    }
-}
+      }
 
       function addComment(name, message) {
         const listItem = document.createElement("li");
@@ -184,9 +199,10 @@ async function postComment(name, message) {
         .addEventListener("click", async () => {
           const name = commentName.value.trim();
           const message = commentInput.value.trim();
+
           if (name && message) {
             await postComment(name, message); // Post to backend first
-            fetchComments(); // Refresh the comments
+            await fetchComments(); // Refresh the comments
             commentName.value = "";
             commentInput.value = "";
           }
