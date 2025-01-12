@@ -64,5 +64,3 @@ document
 
 // Initialize comments on page load
 fetchComments();
-
-
