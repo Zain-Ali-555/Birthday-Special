@@ -46,3 +46,9 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+// Clear all comments
+app.delete('/comments', (req, res) => {
+    comments.length = 0; // Clear the array
+    res.status(200).json({ message: 'All comments have been cleared!' });
+});
