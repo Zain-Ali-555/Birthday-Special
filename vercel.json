@@ -1,9 +1,5 @@
 {
-    "rewrites": [
-      {
-        "source": "/comments",
-        "destination": "/api/comments"
-      }
-    ]
-  }
-  
+  "rewrites": [
+    { "source": "/comments", "destination": "/api/comments" }
+  ]
+}

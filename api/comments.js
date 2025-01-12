@@ -1,54 +1,33 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+let comments = []; // In-memory array to store comments
 
-const app = express();
-const PORT = 3000;
+export default function handler(req, res) {
+    const { method } = req;
 
-app.use(cors());
-app.use(bodyParser.json());
+    switch (method) {
+        case 'GET': // Fetch all comments
+            res.status(200).json(comments);
+            break;
 
-// Add CSP headers
-app.use((req, res, next) => {
-    res.setHeader(
-        'Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline';"
-    );
-    next();
-});
+        case 'POST': // Add a new comment
+            const { name, message } = req.body;
 
-// In-memory array to store comments
-const comments = [];
+            if (name && message) {
+                const newComment = { id: Date.now(), name, message }; // Add unique ID
+                comments.push(newComment);
+                res.status(201).json({ message: 'Comment added successfully!', comment: newComment });
+            } else {
+                res.status(400).json({ message: 'Name and message are required!' });
+            }
+            break;
 
-// Endpoint to fetch all comments
-app.get('/comments', (req, res) => {
-    res.json(comments); // Return all comments
-});
+        case 'DELETE': // Clear all comments
+            comments = []; // Clear the in-memory array
+            res.status(200).json({ message: 'All comments have been cleared!' });
+            break;
 
-// Endpoint to add a new comment
-app.post('/comments', (req, res) => {
-    const { name, message } = req.body;
-
-    // Validate the input
-    if (name && message) {
-        comments.push({ name, message }); // Add the new comment to the array
-        res.status(201).json({ message: 'Comment added successfully!' });
-    } else {
-        res.status(400).json({ message: 'Name and message are required!' });
+        default: // Handle unsupported methods
+            res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+            res.status(405).end(`Method ${method} Not Allowed`);
+            break;
     }
-});
-
-// Optional: Root route to prevent "Cannot GET /" error
-app.get('/', (req, res) => {
-    res.send('Welcome to the Birthday Comments API!');
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
-
-// Clear all comments
-app.delete('/comments', (req, res) => {
-    comments.length = 0; // Clear the array
-    res.status(200).json({ message: 'All comments have been cleared!' });
-});
+}
