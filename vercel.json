@@ -1,0 +1,9 @@
+{
+    "rewrites": [
+      {
+        "source": "/comments",
+        "destination": "/api/comments"
+      }
+    ]
+  }
+  
