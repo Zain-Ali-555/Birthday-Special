@@ -72,6 +72,7 @@
         color: #ffd1dc;
       }
 
+      #name-form,
       #comment-form {
         display: flex;
         flex-direction: column;
@@ -79,8 +80,9 @@
         margin-bottom: 30px;
       }
 
-      #comment-form input,
-      #comment-form textarea {
+      input,
+      textarea,
+      button {
         width: 100%;
         padding: 15px;
         font-size: 1rem;
@@ -94,25 +96,22 @@
         transition: all 0.3s ease;
       }
 
-      #comment-form input:focus,
-      #comment-form textarea:focus {
+      input:focus,
+      textarea:focus {
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       }
 
-      #comment-form button {
-        padding: 15px;
+      button {
         background: #ff477e;
         color: white;
         font-size: 1.2rem;
-        border: none;
-        border-radius: 8px;
         cursor: pointer;
         font-family: "Poppins", Arial, sans-serif;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
       }
 
-      #comment-form button:hover {
+      button:hover {
         background: #ff285c;
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
@@ -141,12 +140,6 @@
         color: #ff477e;
       }
 
-      .comment p {
-        margin: 0;
-        font-size: 1rem;
-        line-height: 1.4;
-      }
-
       footer {
         margin-top: auto;
         text-align: center;
@@ -163,40 +156,6 @@
 
       footer a:hover {
         text-decoration: underline;
-      }
-
-      /* Keyframes for animations */
-      @keyframes fadeInDown {
-        from {
-          opacity: 0;
-          transform: translateY(-30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      @keyframes bounceIn {
-        from {
-          opacity: 0;
-          transform: scale(0.5);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
       }
     </style>
   </head>
@@ -216,26 +175,121 @@
           id="comment-input"
           rows="3"
           placeholder="Write your message here..."
-          required
         ></textarea>
+        <button type="button" id="start-recording">Record Voice</button>
         <button type="button" id="submit-comment">Post Message</button>
       </form>
-
       <ul id="comment-list"></ul>
     </section>
 
-    <footer>
-      Made with ❤️ by <a href="#">MalikZain555</a>
-    </footer>
+    <footer>Made with ❤️ by <a href="#">MalikZain555</a></footer>
 
     <script>
+      const nameInput = document.getElementById("comment-name");
+      const commentInput = document.getElementById("comment-input");
+      const startRecordingButton = document.getElementById("start-recording");
+      const submitButton = document.getElementById("submit-comment");
+      const commentList = document.getElementById("comment-list");
+
+      let mediaRecorder;
+      let audioChunks = [];
+      let isRecording = false;
+
+      // Voice Recording Logic
+      startRecordingButton.addEventListener("click", async () => {
+        if (isRecording) {
+          mediaRecorder.stop();
+          startRecordingButton.textContent = "Record Voice";
+          isRecording = false;
+          return;
+        }
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            postVoiceMessage(audioUrl);
+          };
+
+          mediaRecorder.start();
+          startRecordingButton.textContent = "Stop Recording";
+          isRecording = true;
+        } catch (error) {
+          alert(`Error accessing microphone: ${error.message}`);
+          console.error("Microphone error:", error);
+        }
+      });
+
+      // Posting Text or Voice Messages
+      submitButton.addEventListener("click", () => {
+        const name = nameInput.value.trim();
+        const message = commentInput.value.trim();
+
+        if (!name || !message) {
+          alert("Please fill in your name and message.");
+          return;
+        }
+
+        const commentElement = createCommentElement(name, message);
+        commentList.appendChild(commentElement);
+
+        // Clear inputs
+        nameInput.value = "";
+        commentInput.value = "";
+      });
+
+      // Function to Post Voice Message
+      function postVoiceMessage(audioUrl) {
+        const name = nameInput.value.trim();
+
+        if (!name) {
+          alert("Please fill in your name before recording a message.");
+          return;
+        }
+
+        const commentElement = document.createElement("li");
+        commentElement.classList.add("comment");
+        commentElement.innerHTML = `
+          <h3>${name}</h3>
+          <audio controls>
+            <source src="${audioUrl}" type="audio/mp3" />
+            Your browser does not support the audio element.
+          </audio>
+        `;
+        commentList.appendChild(commentElement);
+
+        // Clear inputs
+        nameInput.value = "";
+      }
+
+      // Function to Create a Comment Element
+      function createCommentElement(name, message) {
+        const commentElement = document.createElement("li");
+        commentElement.classList.add("comment");
+        commentElement.innerHTML = `
+          <h3>${name}</h3>
+          <p>${message}</p>
+        `;
+        return commentElement;
+      }
+
+      // Balloons Animation Logic
       const canvas = document.getElementById("balloonsCanvas");
       const ctx = canvas.getContext("2d");
       canvas.width = window.innerWidth;
       canvas.height = 200;
 
       let balloons = [];
-
       class Balloon {
         constructor(x, y, color) {
           this.x = x;
@@ -272,7 +326,7 @@
           "#85E3FF",
           "#FFEC94",
           "#94FFB5",
-          "#94DFFF"
+          "#94DFFF",
         ];
         for (let i = 0; i < 20; i++) {
           const x = Math.random() * canvas.width;
@@ -290,6 +344,7 @@
 
       createBalloons();
       animateBalloons();
+
     </script>
   </body>
 </html>
